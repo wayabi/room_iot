@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <string>
 #include <iostream>
@@ -7,10 +8,24 @@
 #include <sstream>
 
 #include <linux/input.h>
+#include <sys/wait.h>
 
 #include "Util.h"
 
 using namespace std;
+
+void exec(const char* path)
+{
+	pid_t pid = fork();
+	if(pid < 0){
+		return;
+	}else if(pid == 0){
+		execl(path, NULL);
+		return;
+	}
+	int status;
+	waitpid(pid, &status, 0);
+}
 
 int main(int argc, char** argv)
 {
@@ -20,7 +35,7 @@ int main(int argc, char** argv)
 
 	FILE* f;
 	if((f = fopen(ss.str().c_str(), "rb")) == NULL){
-		cout << "no " << dev << endl;
+		cout << "no " << ss.str() << endl;
 		return 1;
 	}
 
@@ -30,11 +45,16 @@ int main(int argc, char** argv)
 
 	int size;
 	while((size = fread(&buf[0], 1, size_buf, f)) > 0){
-		cout << (int)buf[0] << ", " << (int)buf[29] << endl;
 		int button_state = buf[6] & 0x01;
 		int button_id = buf[26];
-		cout << "button_id:" << button_id << ", state:" << button_state << endl;
-		Util::hexdump(cout, &buf[0], size_buf);
+		if(button_state == 0) continue;
+		if(button_id == 114){
+			cout << "button0" << endl;
+			exec("/home/pi/room/event_read/bin/button0.sh");
+		}else if(button_id == 115){
+			cout << "button1" << endl;
+			exec("/home/pi/room/event_read/bin/button1.sh");
+		}
 	}
 
 	return 0;
