@@ -10,8 +10,6 @@
 #include <linux/input.h>
 #include <sys/wait.h>
 
-#include "Util.h"
-
 using namespace std;
 
 void exec(const char* path)
